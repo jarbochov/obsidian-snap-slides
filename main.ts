@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, SettingDefinitionItem, normalizePath, Notice, MarkdownView, TFile } from "obsidian";
+import { App, ColorComponent, Plugin, PluginSettingTab, Setting, SettingDefinitionItem, normalizePath, Notice, MarkdownView, TFile } from "obsidian";
 
 interface SnapSlidesSettings {
   enableStyling: boolean;
@@ -63,6 +63,28 @@ function isStringSettingKey(key: string): key is StringSettingKey {
   return STRING_SETTING_KEYS.has(key);
 }
 
+const DEFAULT_ACCENT_COLOR = "#A2CF80";
+const OBSIDIAN_ACCENT_COLOR = "var(--interactive-accent, var(--color-accent, #A2CF80))";
+
+function getObsidianAccentColor(): string {
+  const probe = document.body.createSpan();
+  probe.style.color = OBSIDIAN_ACCENT_COLOR;
+
+  let computedColor: string;
+  try {
+    computedColor = getComputedStyle(probe).color;
+  } finally {
+    probe.remove();
+  }
+
+  const rgb = computedColor.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (!rgb) {
+    return DEFAULT_ACCENT_COLOR;
+  }
+
+  return `#${rgb.slice(1, 4).map(channel => Number(channel).toString(16).padStart(2, "0")).join("")}`;
+}
+
 const DEFAULT_SETTINGS: SnapSlidesSettings = {
   enableStyling: true,
   outputFolder: "",
@@ -71,7 +93,7 @@ const DEFAULT_SETTINGS: SnapSlidesSettings = {
   h2FontSize: "1.4em",
   slidePadding: "3vw",
   headingMarginTop: "2.5em",
-  accentColor: "#A2CF80",
+  accentColor: "",
   scrollableSlides: true,
   h1Color: "#A2CF80",
   h2Color: "#FFD700",
@@ -87,8 +109,11 @@ const DEFAULT_SETTINGS: SnapSlidesSettings = {
 };
 
 function updateCssSettings(settings: SnapSlidesSettings) {
+  document.body.style.setProperty(
+    "--snap-slides-accent-color",
+    settings.accentColor || OBSIDIAN_ACCENT_COLOR
+  );
   document.documentElement.setCssProps({
-    "--snap-slides-accent-color": settings.accentColor,
     "--snap-slides-h1-color": settings.h1Color,
     "--snap-slides-h2-color": settings.h2Color,
     "--snap-slides-h3-color": settings.h3Color,
@@ -112,6 +137,7 @@ function updateCssSettings(settings: SnapSlidesSettings) {
 
 function clearCssSettings() {
   const root = document.documentElement;
+  document.body.style.removeProperty("--snap-slides-accent-color");
   root.removeClasses([
     "snap-slides-styling-enabled",
     "snap-slides-mobile-enabled",
@@ -121,7 +147,6 @@ function clearCssSettings() {
     "snap-slides-close-button-idle"
   ]);
   [
-    "--snap-slides-accent-color",
     "--snap-slides-h1-color",
     "--snap-slides-h2-color",
     "--snap-slides-h3-color",
@@ -213,11 +238,20 @@ export default class SnapSlidesPlugin extends Plugin {
 
   async loadSettings() {
     const savedData: unknown = await this.loadData();
-    const savedSettings =
+    const savedSettings: Partial<SnapSlidesSettings> =
       typeof savedData === "object" && savedData !== null && !Array.isArray(savedData)
-        ? (savedData as Partial<SnapSlidesSettings>)
+        ? { ...(savedData as Partial<SnapSlidesSettings>) }
         : {};
+    const migrateLegacyAccent =
+      typeof savedSettings.accentColor === "string" &&
+      savedSettings.accentColor.toUpperCase() === DEFAULT_ACCENT_COLOR;
+    if (migrateLegacyAccent) {
+      savedSettings.accentColor = "";
+    }
     this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
+    if (migrateLegacyAccent) {
+      await this.saveData(this.settings);
+    }
   }
 
   async saveSettings() {
@@ -331,9 +365,9 @@ class SnapSlidesSettingTab extends PluginSettingTab {
       },
       {
         name: "Accent color",
-        desc: "Accent color for slides (applies to links)",
+        desc: "Defaults to Obsidian's accent color. Choose a color to override it.",
         visible: stylingVisible,
-        control: { type: "color", key: "accentColor", defaultValue: "#A2CF80" }
+        render: setting => this.renderAccentColorSetting(setting)
       },
       {
         name: "H1 color",
@@ -400,13 +434,36 @@ class SnapSlidesSettingTab extends PluginSettingTab {
           },
           {
             name: "Center content vertically on mobile",
-            desc: "If enabled, the content of each slide is centered vertically in mobile mode (if content fits).",
+            desc: "Center slides that fit vertically. Oversized slides start at the top when scrolling is enabled.",
             visible: mobileVisible,
             control: { type: "toggle", key: "centerMobileVertically" }
           }
         ]
       }
     ];
+  }
+
+  private renderAccentColorSetting(setting: Setting): void {
+    let colorPicker: ColorComponent | null = null;
+    setting
+      .addColorPicker(picker => {
+        colorPicker = picker;
+        picker
+          .setValue(this.plugin.settings.accentColor || getObsidianAccentColor())
+          .onChange(async value => {
+            this.plugin.settings.accentColor = value;
+            await this.plugin.saveSettings();
+          });
+      })
+      .addButton(button =>
+        button
+          .setButtonText("Use theme accent")
+          .onClick(async () => {
+            this.plugin.settings.accentColor = "";
+            await this.plugin.saveSettings();
+            colorPicker?.setValue(getObsidianAccentColor());
+          })
+      );
   }
 
   override async setControlValue(key: string, value: unknown): Promise<void> {
@@ -541,17 +598,10 @@ class SnapSlidesSettingTab extends PluginSettingTab {
 
       // --- Colors Subsection ---
       new Setting(containerEl).setName("Colors").setHeading();
-      new Setting(containerEl)
+      const accentColorSetting = new Setting(containerEl)
         .setName("Accent color")
-        .setDesc("Accent color for slides (applies to links)")
-        .addColorPicker(picker =>
-          picker
-            .setValue(this.plugin.settings.accentColor || "#A2CF80")
-            .onChange(async value => {
-              this.plugin.settings.accentColor = value || "#A2CF80";
-              await this.plugin.saveSettings();
-            })
-        );
+        .setDesc("Defaults to Obsidian's accent color. Choose a color to override it.");
+      this.renderAccentColorSetting(accentColorSetting);
       new Setting(containerEl)
         .setName("H1 color")
         .setDesc("Color for h1 headings")
@@ -671,7 +721,7 @@ class SnapSlidesSettingTab extends PluginSettingTab {
         );
       new Setting(containerEl)
         .setName("Center content vertically on mobile")
-        .setDesc("If enabled, the content of each slide is centered vertically in mobile mode (if content fits).")
+        .setDesc("Center slides that fit vertically. Oversized slides start at the top when scrolling is enabled.")
         .addToggle(toggle =>
           toggle
             .setValue(this.plugin.settings.centerMobileVertically)

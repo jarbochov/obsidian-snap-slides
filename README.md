@@ -17,7 +17,7 @@ Choose whichever approach fits the moment:
 
 - Optional styling for headings, colors, font sizes, padding, and heading spacing.
 - Scrollable slides for content that doesn't fit on one screen.
-- Mobile-specific portrait and landscape font sizes, safe-area spacing, optional vertical centering, and scrolling.
+- Mobile-specific portrait and landscape font sizes, safe-area spacing, optional vertical centering in either orientation, and scrolling that starts oversized slides at the top.
 - A mobile close button that fades when idle and reappears on interaction.
 - A configurable folder for presentation copies.
 
@@ -48,7 +48,7 @@ The defaults are ready to use; customization is optional.
 - **Enable styling** to toggle appearance changes independently of scrolling and mobile behavior.
 - **Scrollable slides** to allow desktop slides to scroll when content overflows.
 - **Output folder** to choose where generated copies are saved (the vault root by default).
-- **Font sizes, slide padding, heading margin, and colors** to adjust presentation appearance.
+- **Font sizes, slide padding, heading margin, and colors** to adjust presentation appearance. The accent color follows Obsidian's theme by default, can be overridden, and can be reset to the theme color.
 - **Mobile options** for portrait/landscape font sizes, scrolling, vertical centering, and styling.
 
 ## Notes and limitations

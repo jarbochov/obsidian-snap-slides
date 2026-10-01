@@ -1,6 +1,6 @@
 {
   "name": "snap-slides",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Create presentation-ready slide notes quickly with automatic slide breaks before H1/H2 headings.",
   "author": "jarbochov",
   "main": "main.js",

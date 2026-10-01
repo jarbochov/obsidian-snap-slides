@@ -1,106 +1,445 @@
-/* Obsidian Slide Improvements: Only plugin controls heading colors inside .reveal, using unique variable names */
-
-/* Center all headers, left-align all other content */
-.reveal h1,
-.reveal h2,
-.reveal h3,
-.reveal h4,
-.reveal h5,
-.reveal h6 {
-  text-align: center !important;
-  justify-content: center !important;
+html {
+  --snap-slides-accent-color: #A2CF80;
+  --snap-slides-h1-color: #A2CF80;
+  --snap-slides-h2-color: #FFD700;
+  --snap-slides-h3-color: #FF8C00;
+  --snap-slides-h4-color: #1E90FF;
+  --snap-slides-h5-color: #BA55D3;
+  --snap-slides-h6-color: #FF69B4;
+  --snap-slides-base-font-size: 1.6em;
+  --snap-slides-h1-font-size: 2em;
+  --snap-slides-h2-font-size: 1.4em;
+  --snap-slides-padding: 3vw;
+  --snap-slides-heading-margin-top: 2.5em;
+  --snap-slides-mobile-font-size-portrait: 4vw;
+  --snap-slides-mobile-font-size-landscape: 3vw;
 }
 
-/* Plugin-controlled heading colors with unique variable names */
-.reveal h1 { color: var(--slide-h1-color) !important; }
-.reveal h2 { color: var(--slide-h2-color) !important; }
-.reveal h3 { color: var(--slide-h3-color) !important; }
-.reveal h4 { color: var(--slide-h4-color) !important; }
-.reveal h5 { color: var(--slide-h5-color) !important; }
-.reveal h6 { color: var(--slide-h6-color) !important; }
-
-/* Left-align all other content */
-.reveal .slides,
-.reveal .slide,
-.reveal section,
-.reveal p,
-.reveal ul,
-.reveal ol,
-.reveal pre,
-.reveal code,
-.reveal table,
-.reveal blockquote,
-.reveal div {
-  text-align: left !important;
-  justify-content: flex-start !important;
+html.snap-slides-styling-enabled .reveal {
+  font-size: var(--snap-slides-base-font-size);
 }
 
-/* Only left-align paras/lists after headings, not headings themselves */
-.reveal h1 + p,
-.reveal h1 + ul,
-.reveal h1 + ol,
-.reveal h2 + p,
-.reveal h2 + ul,
-.reveal h2 + ol,
-.reveal h3 + p,
-.reveal h3 + ul,
-.reveal h3 + ol,
-.reveal h4 + p,
-.reveal h4 + ul,
-.reveal h4 + ol,
-.reveal h5 + p,
-.reveal h5 + ul,
-.reveal h5 + ol,
-.reveal h6 + p,
-.reveal h6 + ul,
-.reveal h6 + ol {
-  text-align: left !important;
-  justify-content: flex-start !important;
+html.snap-slides-styling-enabled .reveal .slides > section {
+  padding-left: var(--snap-slides-padding);
+  padding-right: var(--snap-slides-padding);
 }
 
-/* Remove margin from the first heading of each type in each slide/section */
-.reveal .slide h1:first-of-type,
-.reveal .slide h2:first-of-type,
-.reveal .slide h3:first-of-type,
-.reveal .slide h4:first-of-type,
-.reveal .slide h5:first-of-type,
-.reveal .slide h6:first-of-type,
-.reveal section h1:first-of-type,
-.reveal section h2:first-of-type,
-.reveal section h3:first-of-type,
-.reveal section h4:first-of-type,
-.reveal section h5:first-of-type,
-.reveal section h6:first-of-type {
-  margin-top: 0 !important;
+html.snap-slides-styling-enabled .reveal h1,
+html.snap-slides-styling-enabled .reveal h2,
+html.snap-slides-styling-enabled .reveal h3,
+html.snap-slides-styling-enabled .reveal h4,
+html.snap-slides-styling-enabled .reveal h5,
+html.snap-slides-styling-enabled .reveal h6 {
+  text-align: center;
+  justify-content: center;
 }
 
-/* Accent color for links */
-.reveal .slide a,
-.reveal section a {
-  color: var(--accent-color) !important;
-  text-decoration-color: var(--accent-color) !important;
+html.snap-slides-styling-enabled .reveal .slides > section h1 {
+  font-size: var(--snap-slides-h1-font-size);
+  color: var(--snap-slides-h1-color);
+  line-height: 1.1;
 }
 
-/* Accent color for horizontal rules */
-.reveal .slide hr,
-.reveal section hr {
-  border-color: var(--accent-color) !important;
+html.snap-slides-styling-enabled .reveal .slides > section h2 {
+  font-size: var(--snap-slides-h2-font-size);
+  color: var(--snap-slides-h2-color);
+  line-height: 1.1;
 }
 
-/* Accent color for selected text */
-.reveal .slide ::selection,
-.reveal section ::selection {
-  background: var(--accent-color);
+html.snap-slides-styling-enabled .reveal .slides > section h3 {
+  color: var(--snap-slides-h3-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slides > section h4 {
+  color: var(--snap-slides-h4-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slides > section h5 {
+  color: var(--snap-slides-h5-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slides > section h6 {
+  color: var(--snap-slides-h6-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slides > section h1:not(:first-of-type),
+html.snap-slides-styling-enabled .reveal .slides > section h2:not(:first-of-type),
+html.snap-slides-styling-enabled .reveal .slides > section h3:not(:first-of-type),
+html.snap-slides-styling-enabled .reveal .slides > section h4:not(:first-of-type),
+html.snap-slides-styling-enabled .reveal .slides > section h5:not(:first-of-type),
+html.snap-slides-styling-enabled .reveal .slides > section h6:not(:first-of-type) {
+  margin-top: var(--snap-slides-heading-margin-top);
+}
+
+html.snap-slides-styling-enabled .reveal .slides,
+html.snap-slides-styling-enabled .reveal .slide,
+html.snap-slides-styling-enabled .reveal section,
+html.snap-slides-styling-enabled .reveal p,
+html.snap-slides-styling-enabled .reveal ul,
+html.snap-slides-styling-enabled .reveal ol,
+html.snap-slides-styling-enabled .reveal pre,
+html.snap-slides-styling-enabled .reveal code,
+html.snap-slides-styling-enabled .reveal table,
+html.snap-slides-styling-enabled .reveal blockquote,
+html.snap-slides-styling-enabled .reveal div {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+html.snap-slides-styling-enabled .reveal .slide h1:first-of-type,
+html.snap-slides-styling-enabled .reveal .slide h2:first-of-type,
+html.snap-slides-styling-enabled .reveal .slide h3:first-of-type,
+html.snap-slides-styling-enabled .reveal .slide h4:first-of-type,
+html.snap-slides-styling-enabled .reveal .slide h5:first-of-type,
+html.snap-slides-styling-enabled .reveal .slide h6:first-of-type,
+html.snap-slides-styling-enabled .reveal section h1:first-of-type,
+html.snap-slides-styling-enabled .reveal section h2:first-of-type,
+html.snap-slides-styling-enabled .reveal section h3:first-of-type,
+html.snap-slides-styling-enabled .reveal section h4:first-of-type,
+html.snap-slides-styling-enabled .reveal section h5:first-of-type,
+html.snap-slides-styling-enabled .reveal section h6:first-of-type {
+  margin-top: 0;
+}
+
+html.snap-slides-styling-enabled .reveal h1 + p,
+html.snap-slides-styling-enabled .reveal h1 + ul,
+html.snap-slides-styling-enabled .reveal h1 + ol,
+html.snap-slides-styling-enabled .reveal h2 + p,
+html.snap-slides-styling-enabled .reveal h2 + ul,
+html.snap-slides-styling-enabled .reveal h2 + ol,
+html.snap-slides-styling-enabled .reveal h3 + p,
+html.snap-slides-styling-enabled .reveal h3 + ul,
+html.snap-slides-styling-enabled .reveal h3 + ol,
+html.snap-slides-styling-enabled .reveal h4 + p,
+html.snap-slides-styling-enabled .reveal h4 + ul,
+html.snap-slides-styling-enabled .reveal h4 + ol,
+html.snap-slides-styling-enabled .reveal h5 + p,
+html.snap-slides-styling-enabled .reveal h5 + ul,
+html.snap-slides-styling-enabled .reveal h5 + ol,
+html.snap-slides-styling-enabled .reveal h6 + p,
+html.snap-slides-styling-enabled .reveal h6 + ul,
+html.snap-slides-styling-enabled .reveal h6 + ol {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+html.snap-slides-styling-enabled .reveal .slide a,
+html.snap-slides-styling-enabled .reveal section a {
+  color: var(--snap-slides-accent-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slide hr,
+html.snap-slides-styling-enabled .reveal section hr {
+  border-color: var(--snap-slides-accent-color);
+}
+
+html.snap-slides-styling-enabled .reveal .slide ::selection,
+html.snap-slides-styling-enabled .reveal section ::selection {
+  background: var(--snap-slides-accent-color);
   color: #fff;
 }
 
-
-
-/* Progress Bar and Arrows */
-.reveal .controls .controls-arrow {
-  color: var(--accent-color);
+html.snap-slides-styling-enabled .reveal .controls .controls-arrow {
+  color: var(--snap-slides-accent-color);
 }
 
-.reveal .progress {
-    color: var(--accent-color) !important;
+html.snap-slides-styling-enabled .reveal .progress {
+  color: var(--snap-slides-accent-color);
+}
+
+@media (pointer: fine), (hover: hover) {
+  html.snap-slides-scrollable .reveal .slides > section {
+    overflow-y: auto;
+    max-height: 100%;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+
+  html.snap-slides-scrollable .reveal .slides > section::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+    background: transparent;
+  }
+
+  html:not(.snap-slides-scrollable) .reveal .slides > section {
+    overflow-y: unset;
+    max-height: unset;
+    scrollbar-width: unset;
+    -ms-overflow-style: unset;
+  }
+}
+
+@media (pointer: fine) and (min-width: 768px) and (max-width: 1400px) and (orientation: landscape) {
+  html.snap-slides-scrollable .reveal,
+  html.snap-slides-scrollable .reveal .viewport,
+  html.snap-slides-scrollable .reveal .slides,
+  html.snap-slides-scrollable .reveal .slides .stack,
+  html.snap-slides-scrollable .reveal .slides > section,
+  html.snap-slides-scrollable .reveal .slides > section.present {
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+
+  html.snap-slides-scrollable .reveal .slides > section,
+  html.snap-slides-scrollable .reveal .slides > section.present {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html.snap-slides-scrollable .reveal .slides > section::-webkit-scrollbar,
+  html.snap-slides-scrollable .reveal .slides > section.present::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+    background: transparent;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px), (pointer: coarse) and (max-height: 600px) {
+  html.snap-slides-mobile-enabled .reveal,
+  html.snap-slides-mobile-enabled .reveal .viewport,
+  html.snap-slides-mobile-enabled .reveal .slides,
+  html.snap-slides-mobile-enabled .reveal .slides .stack,
+  html.snap-slides-mobile-enabled .reveal .slides > section,
+  html.snap-slides-mobile-enabled .reveal .slides > section.present {
+    width: 100vw;
+    min-width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    left: 0;
+    top: 0;
+    margin: 0;
+    box-sizing: border-box;
+    position: fixed;
+    transform: none;
+    z-index: 10;
+    overflow-x: hidden;
+    padding: 0;
+    padding-bottom: 0;
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides,
+  html.snap-slides-mobile-enabled .reveal .slides .stack {
+    display: block;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn {
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 16px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    width: 48px;
+    height: 48px;
+    font-size: 2em;
+    z-index: 9999;
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    touch-action: manipulation;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    background: none;
+    border-radius: 0;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn:hover,
+  html.snap-slides-mobile-enabled .slides-close-btn:active,
+  html.snap-slides-mobile-enabled .slides-close-btn:focus {
+    opacity: 1;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn > * {
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 1.5em;
+  }
+
+  html.snap-slides-mobile-enabled .reveal .backgrounds,
+  html.snap-slides-mobile-enabled .reveal .progress,
+  html.snap-slides-mobile-enabled .reveal .controls {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px) and (orientation: portrait), (pointer: coarse) and (max-height: 600px) and (orientation: portrait) {
+  html.snap-slides-mobile-enabled .reveal {
+    font-size: var(--snap-slides-mobile-font-size-portrait);
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides > section.present {
+    height: 100vh;
+    padding-left: 6vw;
+    padding-right: 6vw;
+    padding-top: max(3vw, env(safe-area-inset-top, 20px));
+    padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px));
+    background: none;
+  }
+
+  html.snap-slides-mobile-enabled.snap-slides-mobile-scrollable .reveal .slides > section.present {
+    overflow-y: auto;
+  }
+
+  html.snap-slides-mobile-enabled:not(.snap-slides-mobile-scrollable) .reveal .slides > section.present {
+    overflow-y: hidden;
+  }
+
+  html.snap-slides-mobile-enabled.snap-slides-center-mobile .reveal .slides > section.present {
+    /* The core sets display inline on the present section. */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  html.snap-slides-mobile-enabled:not(.snap-slides-center-mobile) .reveal .slides > section.present {
+    display: block;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px) and (orientation: landscape), (pointer: coarse) and (max-height: 600px) and (orientation: landscape) {
+  html.snap-slides-mobile-enabled .reveal {
+    font-size: var(--snap-slides-mobile-font-size-landscape);
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides > section.present {
+    height: 100vh;
+    padding-left: 6vw;
+    padding-right: 6vw;
+    padding-top: max(3vw, env(safe-area-inset-top, 20px));
+    padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px));
+    background: none;
+  }
+
+  html.snap-slides-mobile-enabled.snap-slides-mobile-scrollable .reveal .slides > section.present {
+    overflow-y: auto;
+    display: block;
+  }
+
+  html.snap-slides-mobile-enabled:not(.snap-slides-mobile-scrollable) .reveal .slides > section.present {
+    overflow-y: hidden;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1400px) and (orientation: landscape) {
+  html.snap-slides-mobile-enabled .reveal,
+  html.snap-slides-mobile-enabled .reveal .viewport,
+  html.snap-slides-mobile-enabled .reveal .slides,
+  html.snap-slides-mobile-enabled .reveal .slides .stack,
+  html.snap-slides-mobile-enabled .reveal .slides > section,
+  html.snap-slides-mobile-enabled .reveal .slides > section.present {
+    width: 100vw;
+    min-width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    left: 0;
+    top: 0;
+    margin: 0;
+    box-sizing: border-box;
+    position: fixed;
+    transform: none;
+    z-index: 10;
+    overflow-x: hidden;
+    padding: 0;
+    padding-bottom: 0;
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides,
+  html.snap-slides-mobile-enabled .reveal .slides .stack {
+    display: block;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn {
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 16px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    width: 48px;
+    height: 48px;
+    font-size: 2em;
+    z-index: 9999;
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    touch-action: manipulation;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    background: none;
+    border-radius: 0;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn:hover,
+  html.snap-slides-mobile-enabled .slides-close-btn:active,
+  html.snap-slides-mobile-enabled .slides-close-btn:focus {
+    opacity: 1;
+  }
+
+  html.snap-slides-mobile-enabled .slides-close-btn > * {
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 1.5em;
+  }
+
+  html.snap-slides-mobile-enabled .reveal .backgrounds,
+  html.snap-slides-mobile-enabled .reveal .progress,
+  html.snap-slides-mobile-enabled .reveal .controls {
+    display: none;
+  }
+
+  html.snap-slides-mobile-enabled .reveal {
+    font-size: var(--snap-slides-mobile-font-size-landscape);
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides > section.present {
+    min-height: 100vh;
+    height: 100vh;
+    padding-left: 6vw;
+    padding-right: 6vw;
+    padding-top: max(3vw, env(safe-area-inset-top, 20px));
+    padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px));
+    background: none;
+  }
+
+  html.snap-slides-mobile-enabled.snap-slides-mobile-scrollable .reveal .slides > section.present {
+    overflow-y: auto;
+    display: block;
+  }
+
+  html.snap-slides-mobile-enabled:not(.snap-slides-mobile-scrollable) .reveal .slides > section.present {
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px), (pointer: coarse) and (max-height: 600px), (min-width: 768px) and (max-width: 1400px) and (orientation: landscape) {
+  /* Reveal sets these layout values inline on the Slides elements. */
+  html.snap-slides-mobile-enabled .reveal .slides {
+    height: 100vh !important;
+    inset: 0 !important;
+    transform: none !important;
+  }
+
+  html.snap-slides-mobile-enabled .reveal .slides > section {
+    top: 0 !important;
+  }
+}
+
+html.snap-slides-close-button-idle .slides-close-btn:not(:focus-visible) {
+  opacity: 0.2;
+}

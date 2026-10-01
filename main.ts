@@ -1,6 +1,6 @@
-import { App, Plugin, PluginSettingTab, Setting, normalizePath, Notice, MarkdownView, TFile, Platform } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, SettingDefinitionItem, normalizePath, Notice, MarkdownView, TFile } from "obsidian";
 
-interface SlideImprovementsSettings {
+interface SnapSlidesSettings {
   enableStyling: boolean;
   outputFolder: string;
   baseFontSize: string;
@@ -23,7 +23,47 @@ interface SlideImprovementsSettings {
   centerMobileVertically: boolean;
 }
 
-const DEFAULT_SETTINGS: SlideImprovementsSettings = {
+type BooleanSettingKey = {
+  [Key in keyof SnapSlidesSettings]: SnapSlidesSettings[Key] extends boolean ? Key : never;
+}[keyof SnapSlidesSettings];
+
+type StringSettingKey = Exclude<keyof SnapSlidesSettings, BooleanSettingKey>;
+
+const BOOLEAN_SETTING_KEYS: ReadonlySet<string> = new Set([
+  "enableStyling",
+  "scrollableSlides",
+  "enableMobileStyling",
+  "mobileScrollableSlides",
+  "centerMobileVertically"
+] satisfies BooleanSettingKey[]);
+
+const STRING_SETTING_KEYS: ReadonlySet<string> = new Set([
+  "outputFolder",
+  "baseFontSize",
+  "h1FontSize",
+  "h2FontSize",
+  "slidePadding",
+  "headingMarginTop",
+  "accentColor",
+  "h1Color",
+  "h2Color",
+  "h3Color",
+  "h4Color",
+  "h5Color",
+  "h6Color",
+  "mobileFontSizeVertical",
+  "mobileFontSizeHorizontal"
+] satisfies StringSettingKey[]);
+
+function isBooleanSettingKey(key: string): key is BooleanSettingKey {
+  return BOOLEAN_SETTING_KEYS.has(key);
+}
+
+function isStringSettingKey(key: string): key is StringSettingKey {
+  return STRING_SETTING_KEYS.has(key);
+}
+
+const DEFAULT_SETTINGS: SnapSlidesSettings = {
   enableStyling: true,
   outputFolder: "",
   baseFontSize: "1.6em",
@@ -46,387 +86,77 @@ const DEFAULT_SETTINGS: SlideImprovementsSettings = {
   centerMobileVertically: false
 };
 
-function injectSlideCss(settings: SlideImprovementsSettings) {
-  const id = "obsidian-slide-improvements-styles";
-  document.getElementById(id)?.remove();
-
-  // Only return early if BOTH styling options are disabled
-  // Scrolling is now handled separately by injectScrollCss()
-  if (!settings.enableStyling && !settings.enableMobileStyling) return;
-
-  const styleTag = document.createElement("style");
-  styleTag.id = id;
-
-  let desktopCss = "", mobileCss = "";
-
-  // --- Desktop/tablet styling ---
-  if (settings.enableStyling) {
-    desktopCss = `
-      :root {
-        --accent-color: ${settings.accentColor};
-        --slide-h1-color: ${settings.h1Color};
-        --slide-h2-color: ${settings.h2Color};
-        --slide-h3-color: ${settings.h3Color};
-        --slide-h4-color: ${settings.h4Color};
-        --slide-h5-color: ${settings.h5Color};
-        --slide-h6-color: ${settings.h6Color};
-        --base-font-size: ${settings.baseFontSize};
-        --h1-font-size: ${settings.h1FontSize};
-        --h2-font-size: ${settings.h2FontSize};
-        --slide-padding: ${settings.slidePadding};
-        --heading-margin-top: ${settings.headingMarginTop};
-      }
-      .reveal {
-        font-size: var(--base-font-size, 1.6em);
-      }
-      .reveal .slides > section {
-        padding-left: var(--slide-padding, 3vw) !important;
-        padding-right: var(--slide-padding, 3vw) !important;
-      }
-      .reveal .slides > section h1 {
-        font-size: var(--h1-font-size, 2em) !important;
-        color: var(--slide-h1-color) !important;
-        line-height: 1.1;
-      }
-      .reveal .slides > section h2 {
-        font-size: var(--h2-font-size, 1.4em) !important;
-        color: var(--slide-h2-color) !important;
-        line-height: 1.1;
-      }
-      .reveal .slides > section h3 { color: var(--slide-h3-color) !important; }
-      .reveal .slides > section h4 { color: var(--slide-h4-color) !important; }
-      .reveal .slides > section h5 { color: var(--slide-h5-color) !important; }
-      .reveal .slides > section h6 { color: var(--slide-h6-color) !important; }
-      .reveal .slides > section h1:not(:first-of-type),
-      .reveal .slides > section h2:not(:first-of-type),
-      .reveal .slides > section h3:not(:first-of-type),
-      .reveal .slides > section h4:not(:first-of-type),
-      .reveal .slides > section h5:not(:first-of-type),
-      .reveal .slides > section h6:not(:first-of-type) {
-        margin-top: var(--heading-margin-top, 2.5em) !important;
-      }
-    `;
-  }
-
-  // --- Mobile-specific styling via media queries (let browser decide!) ---
-  if (settings.enableMobileStyling) {
-    // Shared part for all mobile
-    mobileCss += `
-      @media (pointer: coarse) and (max-width: 900px), (pointer: coarse) and (max-height: 600px) {
-        .reveal,
-        .reveal .viewport,
-        .reveal .slides,
-        .reveal .slides .stack,
-        .reveal .slides > section,
-        .reveal .slides > section.present {
-          width: 100vw !important;
-          min-width: 100vw !important;
-          max-width: 100vw !important;
-          height: 100vh !important;
-          min-height: 100vh !important;
-          max-height: 100vh !important;
-          left: 0 !important;
-          top: 0 !important;
-          margin: 0 !important;
-          box-sizing: border-box !important;
-          position: fixed !important;
-          transform: none !important;
-          z-index: 10 !important;
-          overflow-x: hidden !important;
-          padding: 0 !important;
-          padding-bottom: 0 !important;
-        }
-        .reveal .slides,
-        .reveal .slides .stack {
-          display: block !important;
-          align-items: flex-start !important;
-          justify-content: flex-start !important;
-        }
-        .slides-close-btn {
-          top: 40px !important;
-          right: 40px !important;
-          width: 48px !important;
-          height: 48px !important;
-          font-size: 2em !important;
-          z-index: 9999 !important;
-          position: fixed !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          pointer-events: all !important;
-          touch-action: manipulation !important;
-          opacity: 0.4 !important;
-          transition: opacity 0.2s !important;
-          background: none !important;
-          border-radius: 0 !important;
-        }
-        .slides-close-btn:hover,
-        .slides-close-btn:active,
-        .slides-close-btn:focus {
-          opacity: 0.8 !important;
-        }
-        .slides-close-btn > * {
-          width: 1.5em !important;
-          height: 1.5em !important;
-          font-size: 1.5em !important;
-        }
-        .reveal .backgrounds, .reveal .progress, .reveal .controls {
-          display: none !important;
-        }
-      }
-    `;
-
-    // Portrait (vertical) specific
-    mobileCss += `
-      @media (pointer: coarse) and (max-width: 900px) and (orientation: portrait), (pointer: coarse) and (max-height: 600px) and (orientation: portrait) {
-        .reveal {
-          font-size: ${settings.mobileFontSizeVertical} !important;
-        }
-        .reveal .slides > section.present {
-          min-height: 100vh !important;
-          height: 100vh !important;
-          ${settings.mobileScrollableSlides
-            ? "overflow-y: auto !important;"
-            : "overflow-y: hidden !important;"}
-          padding-left: 6vw !important;
-          padding-right: 6vw !important;
-          padding-top: max(3vw, env(safe-area-inset-top, 20px)) !important;
-          padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px)) !important;
-          ${
-            settings.centerMobileVertically
-              ? `
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            `
-              : `
-            display: block !important;
-            `
-          }
-          background: none !important;
-        }
-      }
-    `;
-
-    // Landscape (horizontal) specific
-    mobileCss += `
-      @media (pointer: coarse) and (max-width: 900px) and (orientation: landscape), (pointer: coarse) and (max-height: 600px) and (orientation: landscape) {
-        .reveal {
-          font-size: ${settings.mobileFontSizeHorizontal} !important;
-        }
-        .reveal .slides > section.present {
-          min-height: 100vh !important;
-          height: 100vh !important;
-          ${settings.mobileScrollableSlides
-            ? `
-          overflow-y: auto !important;
-          display: block !important;
-          `
-            : `
-          overflow-y: hidden !important;
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          justify-content: center !important;
-          `
-          }
-          padding-left: 6vw !important;
-          padding-right: 6vw !important;
-          padding-top: max(3vw, env(safe-area-inset-top, 20px)) !important;
-          padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px)) !important;
-          background: none !important;
-        }
-      }
-    `;
-
-    // Tablet landscape: treat like mobile slides (up to 1400px)
-    mobileCss += `
-      @media (min-width: 768px) and (max-width: 1400px) and (orientation: landscape) {
-        .reveal,
-        .reveal .viewport,
-        .reveal .slides,
-        .reveal .slides .stack,
-        .reveal .slides > section,
-        .reveal .slides > section.present {
-          width: 100vw !important;
-          min-width: 100vw !important;
-          max-width: 100vw !important;
-          height: 100vh !important;
-          min-height: 100vh !important;
-          max-height: 100vh !important;
-          left: 0 !important;
-          top: 0 !important;
-          margin: 0 !important;
-          box-sizing: border-box !important;
-          position: fixed !important;
-          transform: none !important;
-          z-index: 10 !important;
-          overflow-x: hidden !important;
-          padding: 0 !important;
-          padding-bottom: 0 !important;
-        }
-        .reveal .slides,
-        .reveal .slides .stack {
-          display: block !important;
-          align-items: flex-start !important;
-          justify-content: flex-start !important;
-        }
-        .slides-close-btn {
-          top: 40px !important;
-          right: 40px !important;
-          width: 48px !important;
-          height: 48px !important;
-          font-size: 2em !important;
-          z-index: 9999 !important;
-          position: fixed !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          pointer-events: all !important;
-          touch-action: manipulation !important;
-          opacity: 0.4 !important;
-          transition: opacity 0.2s !important;
-          background: none !important;
-          border-radius: 0 !important;
-        }
-        .slides-close-btn:hover,
-        .slides-close-btn:active,
-        .slides-close-btn:focus {
-          opacity: 0.8 !important;
-        }
-        .slides-close-btn > * {
-          width: 1.5em !important;
-          height: 1.5em !important;
-          font-size: 1.5em !important;
-        }
-        .reveal .backgrounds, .reveal .progress, .reveal .controls {
-          display: none !important;
-        }
-        .reveal {
-          font-size: ${settings.mobileFontSizeHorizontal} !important;
-        }
-        .reveal .slides > section.present {
-          min-height: 100vh !important;
-          height: 100vh !important;
-          ${settings.mobileScrollableSlides
-            ? `
-          overflow-y: auto !important;
-          display: block !important;
-          `
-            : `
-          overflow-y: hidden !important;
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          justify-content: center !important;
-          `
-          }
-          padding-left: 6vw !important;
-          padding-right: 6vw !important;
-          padding-top: max(3vw, env(safe-area-inset-top, 20px)) !important;
-          padding-bottom: max(3vw, env(safe-area-inset-bottom, 20px)) !important;
-          background: none !important;
-        }
-      }
-    `;
-  }
-
-  styleTag.textContent = desktopCss + mobileCss;
-  document.head.appendChild(styleTag);
+function updateCssSettings(settings: SnapSlidesSettings) {
+  document.documentElement.setCssProps({
+    "--snap-slides-accent-color": settings.accentColor,
+    "--snap-slides-h1-color": settings.h1Color,
+    "--snap-slides-h2-color": settings.h2Color,
+    "--snap-slides-h3-color": settings.h3Color,
+    "--snap-slides-h4-color": settings.h4Color,
+    "--snap-slides-h5-color": settings.h5Color,
+    "--snap-slides-h6-color": settings.h6Color,
+    "--snap-slides-base-font-size": settings.baseFontSize,
+    "--snap-slides-h1-font-size": settings.h1FontSize,
+    "--snap-slides-h2-font-size": settings.h2FontSize,
+    "--snap-slides-padding": settings.slidePadding,
+    "--snap-slides-heading-margin-top": settings.headingMarginTop,
+    "--snap-slides-mobile-font-size-portrait": settings.mobileFontSizeVertical,
+    "--snap-slides-mobile-font-size-landscape": settings.mobileFontSizeHorizontal
+  });
+  document.documentElement.toggleClass("snap-slides-styling-enabled", settings.enableStyling);
+  document.documentElement.toggleClass("snap-slides-mobile-enabled", settings.enableMobileStyling);
+  document.documentElement.toggleClass("snap-slides-scrollable", settings.scrollableSlides);
+  document.documentElement.toggleClass("snap-slides-mobile-scrollable", settings.mobileScrollableSlides);
+  document.documentElement.toggleClass("snap-slides-center-mobile", settings.centerMobileVertically);
 }
 
-function injectScrollCss(settings: SlideImprovementsSettings) {
-  const id = "obsidian-slide-improvements-scroll-styles";
-  document.getElementById(id)?.remove();
-
-  const styleTag = document.createElement("style");
-  styleTag.id = id;
-
-  let scrollCss = "";
-
-  // Desktop/tablet scrolling - independent of styling settings
-  if (settings.scrollableSlides) {
-    scrollCss += `
-      @media (pointer: fine), (hover: hover) {
-        .reveal .slides > section {
-          overflow-y: auto !important;
-          max-height: 100% !important;
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-        .reveal .slides > section::-webkit-scrollbar {
-          width: 0 !important;
-          height: 0 !important;
-          display: none !important;
-          background: transparent !important;
-        }
-      }
-      @media (pointer: fine) and (min-width: 768px) and (max-width: 1400px) and (orientation: landscape) {
-        .reveal,
-        .reveal .viewport,
-        .reveal .slides,
-        .reveal .slides .stack,
-        .reveal .slides > section,
-        .reveal .slides > section.present {
-          height: 100vh !important;
-          min-height: 100vh !important;
-          max-height: 100vh !important;
-        }
-        .reveal .slides > section,
-        .reveal .slides > section.present {
-          overflow-y: auto !important;
-          -webkit-overflow-scrolling: touch !important;
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-        .reveal .slides > section::-webkit-scrollbar,
-        .reveal .slides > section.present::-webkit-scrollbar {
-          width: 0 !important;
-          height: 0 !important;
-          display: none !important;
-          background: transparent !important;
-        }
-      }
-    `;
-  } else {
-    scrollCss += `
-      @media (pointer: fine), (hover: hover) {
-        .reveal .slides > section {
-          overflow-y: unset !important;
-          max-height: unset !important;
-          scrollbar-width: unset !important;
-          -ms-overflow-style: unset !important;
-        }
-      }
-    `;
-  }
-
-  styleTag.textContent = scrollCss;
-  document.head.appendChild(styleTag);
+function clearCssSettings() {
+  const root = document.documentElement;
+  root.removeClasses([
+    "snap-slides-styling-enabled",
+    "snap-slides-mobile-enabled",
+    "snap-slides-scrollable",
+    "snap-slides-mobile-scrollable",
+    "snap-slides-center-mobile",
+    "snap-slides-close-button-idle"
+  ]);
+  [
+    "--snap-slides-accent-color",
+    "--snap-slides-h1-color",
+    "--snap-slides-h2-color",
+    "--snap-slides-h3-color",
+    "--snap-slides-h4-color",
+    "--snap-slides-h5-color",
+    "--snap-slides-h6-color",
+    "--snap-slides-base-font-size",
+    "--snap-slides-h1-font-size",
+    "--snap-slides-h2-font-size",
+    "--snap-slides-padding",
+    "--snap-slides-heading-margin-top",
+    "--snap-slides-mobile-font-size-portrait",
+    "--snap-slides-mobile-font-size-landscape"
+  ].forEach(property => root.style.removeProperty(property));
 }
 
-export default class ObsidianSlideImprovementsPlugin extends Plugin {
-  settings!: SlideImprovementsSettings;
+export default class SnapSlidesPlugin extends Plugin {
+  settings!: SnapSlidesSettings;
+  private closeButtonIdleTimeout: number | null = null;
 
   async onload() {
     await this.loadSettings();
-    injectSlideCss(this.settings);
-    injectScrollCss(this.settings);
-
-    // Re-inject CSS on window resize or orientation change for device rotation/dynamic breakpoints
-    window.addEventListener("resize", () => {
-      injectSlideCss(this.settings);
-      injectScrollCss(this.settings);
-    });
-    window.addEventListener("orientationchange", () => {
-      injectSlideCss(this.settings);
-      injectScrollCss(this.settings);
-    });
+    updateCssSettings(this.settings);
+    const resetCloseButtonIdleTimer = () => this.resetCloseButtonIdleTimer();
+    this.registerDomEvent(document, "pointermove", resetCloseButtonIdleTimer);
+    this.registerDomEvent(document, "pointerdown", resetCloseButtonIdleTimer);
+    this.registerDomEvent(document, "touchstart", resetCloseButtonIdleTimer, { passive: true });
+    this.registerDomEvent(document, "wheel", resetCloseButtonIdleTimer, { passive: true });
+    this.registerDomEvent(document, "scroll", resetCloseButtonIdleTimer, true);
+    this.registerDomEvent(document, "keydown", resetCloseButtonIdleTimer);
+    this.resetCloseButtonIdleTimer();
 
     this.addCommand({
       id: 'create-slide-note',
-      name: 'Create Slide Copy for Presentation',
+      name: 'Create slide copy for presentation',
       editorCallback: async (editor, view) => {
         if (!(view instanceof MarkdownView)) {
           new Notice("No active Markdown file.");
@@ -439,7 +169,7 @@ export default class ObsidianSlideImprovementsPlugin extends Plugin {
         md = md.replace(/^---\n[\s\S]+?\n---\n?/m, "");
         // Insert slide breaks before H1/H2 (except the first)
         const lines = md.split('\n');
-        let out: string[] = [];
+        const out: string[] = [];
         let firstHeading = true;
         for (const line of lines) {
           if (/^(#|##) /.test(line)) {
@@ -478,40 +208,237 @@ export default class ObsidianSlideImprovementsPlugin extends Plugin {
       }
     });
 
-    this.addSettingTab(new SlideImprovementsSettingTab(this.app, this));
+    this.addSettingTab(new SnapSlidesSettingTab(this.app, this));
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const savedData: unknown = await this.loadData();
+    const savedSettings =
+      typeof savedData === "object" && savedData !== null && !Array.isArray(savedData)
+        ? (savedData as Partial<SnapSlidesSettings>)
+        : {};
+    this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
-    injectSlideCss(this.settings);
-    injectScrollCss(this.settings);
+    updateCssSettings(this.settings);
+  }
+
+  onunload() {
+    if (this.closeButtonIdleTimeout !== null) {
+      window.clearTimeout(this.closeButtonIdleTimeout);
+    }
+    clearCssSettings();
+  }
+
+  private resetCloseButtonIdleTimer() {
+    if (this.closeButtonIdleTimeout !== null) {
+      window.clearTimeout(this.closeButtonIdleTimeout);
+    }
+    document.documentElement.removeClass("snap-slides-close-button-idle");
+    this.closeButtonIdleTimeout = window.setTimeout(() => {
+      this.closeButtonIdleTimeout = null;
+      if (document.querySelector(".slides-close-btn")) {
+        document.documentElement.addClass("snap-slides-close-button-idle");
+      }
+    }, 2500);
   }
 }
 
-class SlideImprovementsSettingTab extends PluginSettingTab {
-  plugin: ObsidianSlideImprovementsPlugin;
+class SnapSlidesSettingTab extends PluginSettingTab {
+  plugin: SnapSlidesPlugin;
 
-  constructor(app: App, plugin: ObsidianSlideImprovementsPlugin) {
+  constructor(app: App, plugin: SnapSlidesPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
+  // Obsidian 1.13+ uses these definitions; display() remains the legacy fallback.
+  getSettingDefinitions(): SettingDefinitionItem<keyof SnapSlidesSettings>[] {
+    const stylingVisible = () => this.plugin.settings.enableStyling;
+    const mobileVisible = () => this.plugin.settings.enableMobileStyling;
+
+    return [
+      {
+        name: "Enable styling",
+        desc: "Enable or disable all slide appearance modifications (except scrolling and mobile).",
+        control: { type: "toggle", key: "enableStyling" }
+      },
+      {
+        name: "Scrollable slides",
+        desc: "Allow slides to scroll vertically when content overflows (desktop/tablet).",
+        control: { type: "toggle", key: "scrollableSlides" }
+      },
+      {
+        name: "Output folder",
+        desc: "Folder to save generated slide notes (leave blank for vault root).",
+        control: { type: "text", key: "outputFolder", placeholder: "Slides" }
+      },
+      {
+        name: "Styling",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Sizes",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Base font size",
+        desc: "Font size for slide content (e.g., 1.6em, 22px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "baseFontSize" }
+      },
+      {
+        name: "H1 font size",
+        desc: "Font size for h1 headings (e.g., 2em, 32px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "h1FontSize" }
+      },
+      {
+        name: "H2 font size",
+        desc: "Font size for h2 headings (e.g., 1.4em, 28px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "h2FontSize" }
+      },
+      {
+        name: "Slide side padding",
+        desc: "Left/right padding for slides (e.g., 3vw, 32px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "slidePadding" }
+      },
+      {
+        name: "Heading top margin",
+        desc: "Top margin for non-first headings (e.g., 2.5em, 40px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "headingMarginTop" }
+      },
+      {
+        name: "Colors",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Accent color",
+        desc: "Accent color for slides (applies to links)",
+        visible: stylingVisible,
+        control: { type: "color", key: "accentColor", defaultValue: "#A2CF80" }
+      },
+      {
+        name: "H1 color",
+        desc: "Color for h1 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h1Color", defaultValue: "#A2CF80" }
+      },
+      {
+        name: "H2 color",
+        desc: "Color for h2 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h2Color", defaultValue: "#FFD700" }
+      },
+      {
+        name: "H3 color",
+        desc: "Color for h3 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h3Color", defaultValue: "#FF8C00" }
+      },
+      {
+        name: "H4 color",
+        desc: "Color for h4 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h4Color", defaultValue: "#1E90FF" }
+      },
+      {
+        name: "H5 color",
+        desc: "Color for h5 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h5Color", defaultValue: "#BA55D3" }
+      },
+      {
+        name: "H6 color",
+        desc: "Color for h6 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h6Color", defaultValue: "#FF69B4" }
+      },
+      {
+        type: "group",
+        heading: "Mobile",
+        items: [
+          {
+            name: "Enable mobile styling",
+            desc: "Enable custom mobile presentation styling (scaling, close icon, etc).",
+            control: { type: "toggle", key: "enableMobileStyling" }
+          },
+          {
+            name: "Mobile font size (vertical/portrait)",
+            desc: "Base font size for slides in vertical (portrait) mobile presentation mode (e.g., 4vw).",
+            visible: mobileVisible,
+            control: { type: "text", key: "mobileFontSizeVertical" }
+          },
+          {
+            name: "Mobile font size (horizontal/landscape)",
+            desc: "Base font size for slides in horizontal (landscape) mobile presentation mode (e.g., 3vw).",
+            visible: mobileVisible,
+            control: { type: "text", key: "mobileFontSizeHorizontal" }
+          },
+          {
+            name: "Mobile scrollable slides",
+            desc: "Allow slides to scroll vertically when content overflows (mobile only).",
+            visible: mobileVisible,
+            control: { type: "toggle", key: "mobileScrollableSlides" }
+          },
+          {
+            name: "Center content vertically on mobile",
+            desc: "If enabled, the content of each slide is centered vertically in mobile mode (if content fits).",
+            visible: mobileVisible,
+            control: { type: "toggle", key: "centerMobileVertically" }
+          }
+        ]
+      }
+    ];
+  }
+
+  override async setControlValue(key: string, value: unknown): Promise<void> {
+    if (isBooleanSettingKey(key)) {
+      if (typeof value !== "boolean") {
+        throw new TypeError(`Expected a boolean value for setting "${key}".`);
+      }
+      this.plugin.settings[key] = value;
+    } else if (isStringSettingKey(key)) {
+      if (typeof value !== "string") {
+        throw new TypeError(`Expected a string value for setting "${key}".`);
+      }
+      this.plugin.settings[key] = value;
+    } else {
+      throw new Error(`Unknown Snap Slides setting "${key}".`);
+    }
+
+    await this.plugin.saveSettings();
+  }
+
   display(): void {
+    this.renderLegacySettings();
+  }
+
+  private renderLegacySettings(): void {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h1", { text: "Slide Improvements - Settings" });
-
     // --- Settings Section (always visible) ---
-    containerEl.createEl("h3", { text: "Settings" });
-
-    // Enable Styling
+    // Enable styling
     new Setting(containerEl)
-      .setName("Enable Styling")
+      .setName("Enable styling")
       .setDesc("Enable or disable all slide appearance modifications (except scrolling and mobile).")
       .addToggle(toggle =>
         toggle
@@ -519,7 +446,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
           .onChange(async value => {
             this.plugin.settings.enableStyling = value;
             await this.plugin.saveSettings();
-            this.display(); // Re-render settings tab
+            this.renderLegacySettings();
           })
       );
 
@@ -542,7 +469,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
       .setDesc("Folder to save generated slide notes (leave blank for vault root).")
       .addText(text =>
         text
-          .setPlaceholder("slides")
+          .setPlaceholder("Slides")
           .setValue(this.plugin.settings.outputFolder)
           .onChange(async value => {
             this.plugin.settings.outputFolder = value;
@@ -552,10 +479,10 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
 
     // --- Styling Section (only if styling is enabled) ---
     if (this.plugin.settings.enableStyling) {
-      containerEl.createEl("h3", { text: "Styling" });
+      new Setting(containerEl).setName("Styling").setHeading();
 
       // --- Sizes Subsection ---
-      containerEl.createEl("h4", { text: "Sizes" });
+      new Setting(containerEl).setName("Sizes").setHeading();
       new Setting(containerEl)
         .setName("Base font size")
         .setDesc("Font size for slide content (e.g., 1.6em, 22px)")
@@ -569,7 +496,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
         );
       new Setting(containerEl)
         .setName("H1 font size")
-        .setDesc("Font size for H1 headings (e.g., 2em, 32px)")
+        .setDesc("Font size for h1 headings (e.g., 2em, 32px)")
         .addText(text =>
           text
             .setValue(this.plugin.settings.h1FontSize)
@@ -580,7 +507,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
         );
       new Setting(containerEl)
         .setName("H2 font size")
-        .setDesc("Font size for H2 headings (e.g., 1.4em, 28px)")
+        .setDesc("Font size for h2 headings (e.g., 1.4em, 28px)")
         .addText(text =>
           text
             .setValue(this.plugin.settings.h2FontSize)
@@ -613,7 +540,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
         );
 
       // --- Colors Subsection ---
-      containerEl.createEl("h4", { text: "Colors" });
+      new Setting(containerEl).setName("Colors").setHeading();
       new Setting(containerEl)
         .setName("Accent color")
         .setDesc("Accent color for slides (applies to links)")
@@ -626,8 +553,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H1 Color")
-        .setDesc("Color for H1 headings")
+        .setName("H1 color")
+        .setDesc("Color for h1 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h1Color || "#A2CF80")
@@ -637,8 +564,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H2 Color")
-        .setDesc("Color for H2 headings")
+        .setName("H2 color")
+        .setDesc("Color for h2 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h2Color || "#FFD700")
@@ -648,8 +575,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H3 Color")
-        .setDesc("Color for H3 headings")
+        .setName("H3 color")
+        .setDesc("Color for h3 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h3Color || "#FF8C00")
@@ -659,8 +586,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H4 Color")
-        .setDesc("Color for H4 headings")
+        .setName("H4 color")
+        .setDesc("Color for h4 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h4Color || "#1E90FF")
@@ -670,8 +597,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H5 Color")
-        .setDesc("Color for H5 headings")
+        .setName("H5 color")
+        .setDesc("Color for h5 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h5Color || "#BA55D3")
@@ -681,8 +608,8 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("H6 Color")
-        .setDesc("Color for H6 headings")
+        .setName("H6 color")
+        .setDesc("Color for h6 headings")
         .addColorPicker(picker =>
           picker
             .setValue(this.plugin.settings.h6Color || "#FF69B4")
@@ -694,9 +621,9 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
     }
 
     // --- Mobile Section ---
-    containerEl.createEl("h3", { text: "Mobile" });
+    new Setting(containerEl).setName("Mobile").setHeading();
     new Setting(containerEl)
-      .setName("Enable Mobile Styling")
+      .setName("Enable mobile styling")
       .setDesc("Enable custom mobile presentation styling (scaling, close icon, etc).")
       .addToggle(toggle =>
         toggle
@@ -704,7 +631,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
           .onChange(async value => {
             this.plugin.settings.enableMobileStyling = value;
             await this.plugin.saveSettings();
-            this.display();
+            this.renderLegacySettings();
           })
       );
 
@@ -732,7 +659,7 @@ class SlideImprovementsSettingTab extends PluginSettingTab {
             })
         );
       new Setting(containerEl)
-        .setName("Mobile Scrollable Slides")
+        .setName("Mobile scrollable slides")
         .setDesc("Allow slides to scroll vertically when content overflows (mobile only).")
         .addToggle(toggle =>
           toggle

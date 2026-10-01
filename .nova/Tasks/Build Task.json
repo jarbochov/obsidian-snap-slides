@@ -6,7 +6,7 @@
     },
     "run" : {
       "enabled" : true,
-      "script" : "cp main.js manifest.json styles.css \"\/Users\/jaredacherup\/Library\/Mobile Documents\/iCloud~md~obsidian\/Documents\/Jarbonotes\/.obsidian\/plugins\/obsidian-slide-improvements\""
+      "script" : "cp main.js manifest.json styles.css \"\/Users\/jaredacherup\/Library\/Mobile Documents\/iCloud~md~obsidian\/Documents\/Jarbonotes\/.obsidian\/plugins\/snap-slides\""
     }
   },
   "buildBeforeRunning" : true

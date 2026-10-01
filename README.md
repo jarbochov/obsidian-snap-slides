@@ -23,6 +23,26 @@ Choose whichever approach fits the moment:
 
 The defaults are ready to use; customization is optional.
 
+## Screenshots
+
+**Slide breaks from headings:** the presentation copy adds separators before H1 and H2 headings without changing the source note.
+
+![A presentation copy with slide breaks between H1 and H2 sections](docs/screenshots/h1-h2-slide-breaks.png)
+
+**Scrollable slides:** overflowing content stays on the same slide as you scroll.
+
+![An overflowing slide at its starting position](docs/screenshots/scrollable-slides.png)
+
+![The same slide after scrolling to its remaining content](docs/screenshots/scrollable-slides-scrolled.png)
+
+**Mobile presentation:** portrait sizing and the close control adapt to a narrow screen.
+
+<img src="docs/screenshots/mobile-layout.png" alt="Snap Slides in a portrait mobile layout" width="320">
+
+**Quick settings:** common presentation options are available from the Snap Slides settings tab.
+
+![Snap Slides quick settings in Obsidian](docs/screenshots/quick-settings.png)
+
 ## Settings
 
 - **Enable styling** to toggle appearance changes independently of scrolling and mobile behavior.
@@ -50,7 +70,7 @@ npm ci
 npm run dev
 ```
 
-Run `npm run verify` before submitting changes to lint, typecheck, and create a production bundle. GitHub Actions runs the same checks for pull requests and pushes to `main`, then uploads a plugin ZIP. Pushing a tag builds and attaches a ZIP to a draft GitHub release.
+Run `npm run verify` before submitting changes to lint, typecheck, and create a production bundle. GitHub Actions runs these checks and the Obsidian community scanner for pull requests and pushes to `main`, then uploads a plugin ZIP artifact. Pushing a tag builds the plugin, generates provenance attestations for `main.js` and `styles.css`, and creates a draft release with the supported plugin files.
 
 ## License
 

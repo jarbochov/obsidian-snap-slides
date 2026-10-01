@@ -19,10 +19,6 @@ export default defineConfig([
           allowDefaultProject: ["eslint.config.mjs", "esbuild.config.mjs"]
         }
       }
-    },
-    rules: {
-      // Keep the settings tab compatible with the manifest's 1.7.0 minimum.
-      "obsidianmd/settings-tab/prefer-setting-definitions": "off"
     }
   }
 ]);

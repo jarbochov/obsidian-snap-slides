@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, normalizePath, Notice, MarkdownView, TFile } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, SettingDefinitionItem, normalizePath, Notice, MarkdownView, TFile } from "obsidian";
 
 interface SnapSlidesSettings {
   enableStyling: boolean;
@@ -21,6 +21,46 @@ interface SnapSlidesSettings {
   mobileFontSizeHorizontal: string;
   mobileScrollableSlides: boolean;
   centerMobileVertically: boolean;
+}
+
+type BooleanSettingKey = {
+  [Key in keyof SnapSlidesSettings]: SnapSlidesSettings[Key] extends boolean ? Key : never;
+}[keyof SnapSlidesSettings];
+
+type StringSettingKey = Exclude<keyof SnapSlidesSettings, BooleanSettingKey>;
+
+const BOOLEAN_SETTING_KEYS: ReadonlySet<string> = new Set([
+  "enableStyling",
+  "scrollableSlides",
+  "enableMobileStyling",
+  "mobileScrollableSlides",
+  "centerMobileVertically"
+] satisfies BooleanSettingKey[]);
+
+const STRING_SETTING_KEYS: ReadonlySet<string> = new Set([
+  "outputFolder",
+  "baseFontSize",
+  "h1FontSize",
+  "h2FontSize",
+  "slidePadding",
+  "headingMarginTop",
+  "accentColor",
+  "h1Color",
+  "h2Color",
+  "h3Color",
+  "h4Color",
+  "h5Color",
+  "h6Color",
+  "mobileFontSizeVertical",
+  "mobileFontSizeHorizontal"
+] satisfies StringSettingKey[]);
+
+function isBooleanSettingKey(key: string): key is BooleanSettingKey {
+  return BOOLEAN_SETTING_KEYS.has(key);
+}
+
+function isStringSettingKey(key: string): key is StringSettingKey {
+  return STRING_SETTING_KEYS.has(key);
 }
 
 const DEFAULT_SETTINGS: SnapSlidesSettings = {
@@ -214,7 +254,184 @@ class SnapSlidesSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  // Obsidian 1.13+ uses these definitions; display() remains the legacy fallback.
+  getSettingDefinitions(): SettingDefinitionItem<keyof SnapSlidesSettings>[] {
+    const stylingVisible = () => this.plugin.settings.enableStyling;
+    const mobileVisible = () => this.plugin.settings.enableMobileStyling;
+
+    return [
+      {
+        name: "Enable styling",
+        desc: "Enable or disable all slide appearance modifications (except scrolling and mobile).",
+        control: { type: "toggle", key: "enableStyling" }
+      },
+      {
+        name: "Scrollable slides",
+        desc: "Allow slides to scroll vertically when content overflows (desktop/tablet).",
+        control: { type: "toggle", key: "scrollableSlides" }
+      },
+      {
+        name: "Output folder",
+        desc: "Folder to save generated slide notes (leave blank for vault root).",
+        control: { type: "text", key: "outputFolder", placeholder: "Slides" }
+      },
+      {
+        name: "Styling",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Sizes",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Base font size",
+        desc: "Font size for slide content (e.g., 1.6em, 22px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "baseFontSize" }
+      },
+      {
+        name: "H1 font size",
+        desc: "Font size for h1 headings (e.g., 2em, 32px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "h1FontSize" }
+      },
+      {
+        name: "H2 font size",
+        desc: "Font size for h2 headings (e.g., 1.4em, 28px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "h2FontSize" }
+      },
+      {
+        name: "Slide side padding",
+        desc: "Left/right padding for slides (e.g., 3vw, 32px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "slidePadding" }
+      },
+      {
+        name: "Heading top margin",
+        desc: "Top margin for non-first headings (e.g., 2.5em, 40px)",
+        visible: stylingVisible,
+        control: { type: "text", key: "headingMarginTop" }
+      },
+      {
+        name: "Colors",
+        searchable: false,
+        visible: stylingVisible,
+        render: setting => {
+          setting.setHeading();
+        }
+      },
+      {
+        name: "Accent color",
+        desc: "Accent color for slides (applies to links)",
+        visible: stylingVisible,
+        control: { type: "color", key: "accentColor", defaultValue: "#A2CF80" }
+      },
+      {
+        name: "H1 color",
+        desc: "Color for h1 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h1Color", defaultValue: "#A2CF80" }
+      },
+      {
+        name: "H2 color",
+        desc: "Color for h2 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h2Color", defaultValue: "#FFD700" }
+      },
+      {
+        name: "H3 color",
+        desc: "Color for h3 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h3Color", defaultValue: "#FF8C00" }
+      },
+      {
+        name: "H4 color",
+        desc: "Color for h4 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h4Color", defaultValue: "#1E90FF" }
+      },
+      {
+        name: "H5 color",
+        desc: "Color for h5 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h5Color", defaultValue: "#BA55D3" }
+      },
+      {
+        name: "H6 color",
+        desc: "Color for h6 headings",
+        visible: stylingVisible,
+        control: { type: "color", key: "h6Color", defaultValue: "#FF69B4" }
+      },
+      {
+        type: "group",
+        heading: "Mobile",
+        items: [
+          {
+            name: "Enable mobile styling",
+            desc: "Enable custom mobile presentation styling (scaling, close icon, etc).",
+            control: { type: "toggle", key: "enableMobileStyling" }
+          },
+          {
+            name: "Mobile font size (vertical/portrait)",
+            desc: "Base font size for slides in vertical (portrait) mobile presentation mode (e.g., 4vw).",
+            visible: mobileVisible,
+            control: { type: "text", key: "mobileFontSizeVertical" }
+          },
+          {
+            name: "Mobile font size (horizontal/landscape)",
+            desc: "Base font size for slides in horizontal (landscape) mobile presentation mode (e.g., 3vw).",
+            visible: mobileVisible,
+            control: { type: "text", key: "mobileFontSizeHorizontal" }
+          },
+          {
+            name: "Mobile scrollable slides",
+            desc: "Allow slides to scroll vertically when content overflows (mobile only).",
+            visible: mobileVisible,
+            control: { type: "toggle", key: "mobileScrollableSlides" }
+          },
+          {
+            name: "Center content vertically on mobile",
+            desc: "If enabled, the content of each slide is centered vertically in mobile mode (if content fits).",
+            visible: mobileVisible,
+            control: { type: "toggle", key: "centerMobileVertically" }
+          }
+        ]
+      }
+    ];
+  }
+
+  override async setControlValue(key: string, value: unknown): Promise<void> {
+    if (isBooleanSettingKey(key)) {
+      if (typeof value !== "boolean") {
+        throw new TypeError(`Expected a boolean value for setting "${key}".`);
+      }
+      this.plugin.settings[key] = value;
+    } else if (isStringSettingKey(key)) {
+      if (typeof value !== "string") {
+        throw new TypeError(`Expected a string value for setting "${key}".`);
+      }
+      this.plugin.settings[key] = value;
+    } else {
+      throw new Error(`Unknown Snap Slides setting "${key}".`);
+    }
+
+    await this.plugin.saveSettings();
+  }
+
   display(): void {
+    this.renderLegacySettings();
+  }
+
+  private renderLegacySettings(): void {
     const { containerEl } = this;
     containerEl.empty();
 
@@ -229,7 +446,7 @@ class SnapSlidesSettingTab extends PluginSettingTab {
           .onChange(async value => {
             this.plugin.settings.enableStyling = value;
             await this.plugin.saveSettings();
-            this.display(); // Re-render settings tab
+            this.renderLegacySettings();
           })
       );
 
@@ -414,7 +631,7 @@ class SnapSlidesSettingTab extends PluginSettingTab {
           .onChange(async value => {
             this.plugin.settings.enableMobileStyling = value;
             await this.plugin.saveSettings();
-            this.display();
+            this.renderLegacySettings();
           })
       );
 

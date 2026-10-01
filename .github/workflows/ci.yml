@@ -31,6 +31,11 @@ jobs:
       - name: Lint, typecheck, and build
         run: npm run verify
 
+      - name: Run Obsidian community scanner
+        uses: obsidianmd/obsidian-workflows@v1
+        with:
+          scanner-lint: true
+
       - name: Package plugin
         run: zip -j snap-slides-${GITHUB_SHA}.zip main.js manifest.json styles.css versions.json
 

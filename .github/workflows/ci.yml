@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint, typecheck, and build
+        run: npm run verify
+
+      - name: Package plugin
+        run: zip -j snap-slides-${GITHUB_SHA}.zip main.js manifest.json styles.css versions.json
+
+      - name: Upload plugin package
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-slides-${{ github.sha }}
+          path: snap-slides-${{ github.sha }}.zip
+          if-no-files-found: error

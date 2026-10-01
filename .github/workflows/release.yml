@@ -1,4 +1,4 @@
-name: Release Obsidian plugin
+name: Release Snap Slides
 
 on:
   push:
@@ -11,25 +11,26 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build plugin
-        run: npm run build
+      - name: Lint, typecheck, and build
+        run: npm run verify
 
       - name: Archive plugin files
-        run: |
-          zip obsidian-slide-improvements-${GITHUB_REF##*/}.zip main.js manifest.json styles.css || true
+        run: zip -j snap-slides-${{ github.ref_name }}.zip main.js manifest.json styles.css versions.json
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
@@ -38,6 +39,7 @@ jobs:
             main.js
             manifest.json
             styles.css
-            obsidian-slide-improvements-${{ github.ref_name }}.zip
+            versions.json
+            snap-slides-${{ github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

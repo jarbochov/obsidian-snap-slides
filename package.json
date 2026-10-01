@@ -1,11 +1,15 @@
 {
-  "name": "slide-improvements",
-  "version": "0.6.1",
-  "description": "Quickly create presentation-ready slide notes in with automatic slide breaks before H1/H2 headings.",
+  "name": "snap-slides",
+  "version": "0.7.0",
+  "description": "Create presentation-ready slide notes quickly with automatic slide breaks before H1/H2 headings.",
   "author": "jarbochov",
   "main": "main.js",
   "scripts": {
-    "build": "tsc"
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm run build"
   },
   "keywords": [
     "obsidian-plugin",
@@ -13,8 +17,12 @@
     "presentation"
   ],
   "devDependencies": {
+    "esbuild": "^0.25.12",
+    "eslint": "^10.11.0",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "obsidian": "^1.8.7",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.71.0"
   },
   "license": "MIT"
 }

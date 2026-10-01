@@ -1,67 +1,56 @@
-# Obsidian Slide Improvements
+# Snap Slides
 
-Enhanced slide and heading styling for [Obsidian](https://obsidian.md/) presentations using [Reveal.js](https://revealjs.com/).
+**Quick, low-prep presentations from the notes you already have.**
 
-## Features
+Snap Slides is for meetings, stand-ups, demos, planning sessions, and other moments when you need to put information on screen and talk it through without first building a polished deck. It is intentionally lightweight: keep your notes, make a quick presentation copy if you want slide breaks, and present with Obsidian's built-in Slides core plugin.
 
-- Customizable slide and heading styles for Reveal.js presentations.
-- Option to enable or disable scrolling on slides when content overflows.
-- Accent and heading color customization.
-- Configurable output folder for generated presentation notes.
-- Command to quickly generate a slide-ready copy of a note (with slide breaks inserted automatically at H1 and H2 headings).
+The idea is inspired by Evernote's old Presentation Mode—a handy way to share information quickly, rather than spend time making a professional, highly polished slide deck.
 
-## Mobile Features
+## Make a quick presentation
 
-- **Separate font sizes for vertical (portrait) and horizontal (landscape) mobile modes.**
-- **Option to center slide content vertically** on mobile (portrait/landscape).
-- **Safe area-aware top padding**: Content is automatically pushed below screen notches/cutouts (such as iPhone Dynamic Island) so nothing is hidden.
-- **Improved close button**: Now smaller, less visually distracting, and easier to tap.
+Choose whichever approach fits the moment:
 
-## Usage
+- **Create a new note with slide breaks:** Open the command palette and run **Create slide copy for presentation**. Snap Slides makes a separate note and inserts slide breaks (`---`) before H1 and H2 headings, except before the first heading. Your original note is never changed.
+- **Present your existing note:** Open the note and present it directly with Obsidian's built-in Slides core plugin. Enable **Scrollable slides** in Snap Slides settings if the content may overflow. No copy or extra note prep is needed.
 
-1. **Install and enable the plugin in Obsidian.**
-2. **Configure appearance and mobile behavior in the plugin settings:**
-    - Choose separate font sizes for vertical (portrait) and horizontal (landscape) mobile modes.
-    - Enable or disable vertical centering of slide content on mobile.
-    - Set colors, padding, scrollability, heading margins, and more.
-3. **Create a presentation-ready copy of any note** using the command palette (`Ctrl+P` / `Cmd+P`) and searching for "Create Slide Copy for Presentation."
-    - This command automatically inserts slide breaks (`---`) before each H1 (`#`) and H2 (`##`) heading in your note, except before the first heading.
-4. **Present your notes with improved styling and mobile usability.**
+## What Snap Slides adds
+
+- Optional styling for headings, colors, font sizes, padding, and heading spacing.
+- Scrollable slides for content that doesn't fit on one screen.
+- Mobile-specific portrait and landscape font sizes, safe-area spacing, optional vertical centering, and scrolling.
+- A mobile close button that fades when idle and reappears on interaction.
+- A configurable folder for presentation copies.
+
+The defaults are ready to use; customization is optional.
 
 ## Settings
 
-- **Enable Styling**: Toggle all slide appearance modifications (except scrolling and mobile).
-- **Scrollable Slides**: Allow slides to scroll vertically if content overflows.
-- **Output Folder**: Where to save generated slide notes.
-- **Font Sizes**: Set base font size and heading sizes for desktop, and base font size separately for mobile (portrait/landscape).
-- **Slide Padding**: Set left/right padding for slides.
-- **Heading Margin**: Set top margin for non-first headings.
-- **Accent and Heading Colors**: Customize colors.
-- **Mobile Customizations**:
-  - Enable mobile styling.
-  - Font size for portrait and landscape.
-  - Scrollable slides on mobile.
-  - Center content vertically (mobile only).
+- **Enable styling** to toggle appearance changes independently of scrolling and mobile behavior.
+- **Scrollable slides** to allow desktop slides to scroll when content overflows.
+- **Output folder** to choose where generated copies are saved (the vault root by default).
+- **Font sizes, slide padding, heading margin, and colors** to adjust presentation appearance.
+- **Mobile options** for portrait/landscape font sizes, scrolling, vertical centering, and styling.
 
-## Notes on Heading Margins
+## Notes and limitations
 
-- **No top margin is added to the first H1 or H2 in a note.**
-  This is intentional: CSS cannot reliably detect if there is any text above the first heading, and extra space above the main heading is generally unwanted. All subsequent H1/H2/H3/etc. headings will have the configured top margin.
-
-## Notes
-
-- **Safe Area Support:**  
-  The plugin uses the device's safe-area insets to push content below notches/cutouts, improving compatibility with modern phones (such as iPhones with Dynamic Island).
-
-## Limitations
-
-- Some Reveal.js theming or custom CSS in your vault may override these styles.  
-- CSS cannot detect whether the first heading in a slide has text above it, so the margin rule is applied for all but the first H1/H2.
-- The plugin is tested on Obsidian's built-in Reveal.js presentations. Custom slide setups may need further adjustments.
+- Snap Slides is designed to work with Obsidian's built-in Slides core plugin. Themes, snippets, or custom presentation setups may override its styling.
+- The first H1 or H2 heading in a note does not receive extra top margin; subsequent headings do.
+- Mobile safe-area spacing helps keep content clear of screen cutouts and notches.
 
 ## Contributing
 
-PRs welcome! Please open an issue or discussion for feature requests or bug reports.
+PRs are welcome. Please open an issue or discussion for feature requests and bug reports.
+
+### Development
+
+Requires Node.js 22 or later.
+
+```sh
+npm ci
+npm run dev
+```
+
+Run `npm run verify` before submitting changes to lint, typecheck, and create a production bundle. GitHub Actions runs the same checks for pull requests and pushes to `main`, then uploads a plugin ZIP. Pushing a tag builds and attaches a ZIP to a draft GitHub release.
 
 ## License
 

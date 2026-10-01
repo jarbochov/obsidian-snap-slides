@@ -4,15 +4,27 @@ on:
   push:
     tags:
       - "*"  # Triggers workflow on any tag push
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to rebuild
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -31,20 +43,34 @@ jobs:
         with:
           scanner-lint: true
 
-      - name: Archive plugin files
-        run: zip -j snap-slides-${{ github.ref_name }}.zip main.js manifest.json styles.css versions.json
+      - name: Attest release assets
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            styles.css
 
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Snap Slides ${{ env.RELEASE_TAG }}
           draft: true
           files: |
             main.js
             manifest.json
             styles.css
-            versions.json
-            snap-slides-${{ github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove unsupported release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
+          for asset in "snap-slides-${RELEASE_TAG}.zip" "versions.json"; do
+            if printf '%s\n' "$release_assets" | grep -Fxq "$asset"; then
+              gh release delete-asset "$RELEASE_TAG" "$asset" --yes
+            fi
+          done
